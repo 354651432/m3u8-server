@@ -1,5 +1,5 @@
+from posixpath import basename
 from urllib import request
-from wsgiref import headers
 from flask import Flask, request
 import requests
 import threading
@@ -22,6 +22,7 @@ def m3u8():
     headers = request.json["headers"]
     if url in dicMap.keys():
         return {"code": 1}
+
     proc(url, headers)
 
     return {"code": 0}
@@ -45,24 +46,30 @@ class threading1(threading.Thread):
         idx = url.rindex("/")
         basePath = url[0:idx+1]
         baseName = url[idx+1:]+".ts"
-        for line in m3u8.text.split("\n"):
-            if line.startswith("#"):
-                continue
+        baseName = "%d-%s" % (hash(url) % 1000000, baseName)
+        baseName = "result/%s" % baseName
+        tmpName = "%s_tmp" % baseName
 
-            url1 = basePath+line
-            print("begin downloading ", url1)
-            r = requests.get(url1, headers=self.headers)
-            if not os.path.exists("result"):
-                os.makedirs("result")
+        with open(tmpName, "wb") as f:
+            for line in m3u8.text.split("\n"):
+                if line.startswith("#"):
+                    continue
 
-            with open("result/%s" % baseName, "ab") as f:
+                url1 = basePath+line
+                print("begin downloading ", url1)
+                r = requests.get(url1, headers=self.headers)
                 f.write(r.content)
+
         del dicMap[url]
+        os.rename(tmpName, baseName)
         print("saved", baseName)
 
 
 def proc(url, headers):
     threading1(url, headers).start()
 
+
+if not os.path.exists("result"):
+    os.makedirs("result")
 
 app.run("0.0.0.0", 2000)
