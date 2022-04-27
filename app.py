@@ -8,6 +8,7 @@ import os
 app = Flask(__name__)
 dicMap = {}
 threadLock = threading.Lock()
+taskNumber = 0
 
 
 @app.route("/")
@@ -36,7 +37,9 @@ class threading1(threading.Thread):
         self.headers = headers
 
     def run(self):
-        url = self.url
+        global taskNumber
+        taskNumber += 1
+        url = self.url+"?"
 
         threadLock.acquire()
         dicMap[url] = 1
@@ -44,8 +47,9 @@ class threading1(threading.Thread):
         m3u8 = requests.get(url, headers=self.headers)
 
         idx = url.rindex("/")
+        idxQueryMark = url.index("?")
         basePath = url[0:idx+1]
-        baseName = url[idx+1:]+".ts"
+        baseName = url[idx+1:idxQueryMark]+".ts"
         baseName = "%d-%s" % (hash(url) % 1000000, baseName)
         baseName = "result/%s" % baseName
         tmpName = "%s_tmp" % baseName
@@ -57,11 +61,13 @@ class threading1(threading.Thread):
 
                 url1 = basePath+line
                 print("begin downloading ", url1)
+                print("task number is %d" % taskNumber)
                 r = requests.get(url1, headers=self.headers)
                 f.write(r.content)
 
         del dicMap[url]
         os.rename(tmpName, baseName)
+        taskNumber -= 1
         print("saved", baseName)
 
 
