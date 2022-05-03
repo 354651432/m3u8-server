@@ -1,0 +1,13 @@
+* related technolegey
+** http client
+** file concat
+** http server
+** json proc
+** thread
+** thread sync
+   
+* rust todos
+** rust return Result
+** modify to a directory
+** add config file
+** add unit tests

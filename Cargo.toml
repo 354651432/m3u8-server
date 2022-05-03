@@ -1,0 +1,18 @@
+[package]
+edition = "2021"
+name = "work"
+version = "0.1.0"
+
+[dependencies]
+actix-web = "4.0.0"
+bytes = "*"
+crate = "*"
+error-chain = "*"
+http = "*"
+json = "*"
+reqwest = {version = "0.11", features = ["json"]}
+serde = "*"
+serde_derive = "*"
+tokio = {version = "1", features = ["full"]}
+toml = "*"
+url = "*"
