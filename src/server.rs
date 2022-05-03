@@ -1,9 +1,8 @@
 use crate::download::*;
-use actix_web::{get, web, App, HttpServer, Responder};
+use actix_web::{web, App, HttpServer, Responder};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::error::Error;
 use std::hash::{Hash, Hasher};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -25,7 +24,7 @@ async fn index() -> impl Responder {
 
 async fn m3u8(post: web::Json<Post>) -> impl Responder {
     let file_name = gen_file_name(&post.url);
-    download_m3u8(&post.url, &file_name, &post.headers).await;
+    let _ = download_m3u8(&post.url, &file_name, &post.headers).await;
     "download finished"
 }
 

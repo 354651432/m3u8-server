@@ -66,7 +66,7 @@ fn build_client(
     let proxy = reqwest::Proxy::https("127.0.0.1:1087")?;
     let client = reqwest::Client::builder().proxy(proxy).build()?;
     for it in headers {
-        client.head(format!("{}:{}", it.0, it.1));
+        let _ = client.head(format!("{}:{}", it.0, it.1));
     }
     Ok(client)
 }
