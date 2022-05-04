@@ -29,13 +29,13 @@ async fn m3u8(post: web::Json<Post>) -> impl Responder {
 }
 
 pub async fn run() -> Result<(), std::io::Error> {
-    println!("server started in :2000");
+    println!("server started in :2022");
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/").route(web::get().to(index)))
             .service(web::resource("m3u8").route(web::post().to(m3u8)))
     })
-    .bind(("0.0.0.0", 2000))?
+    .bind(("0.0.0.0", 2022))?
     .run()
     .await
 }
