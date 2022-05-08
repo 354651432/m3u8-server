@@ -316,6 +316,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "caseless"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "808dab3318747be122cb31d36de18d4d1c81277a76f8332a02b81a3d73463d7f"
+dependencies = [
+ "regex",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1260,6 +1270,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "stream-httparse"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc4bd449e7087a483cadf41897d87818d6f1969ad7413b960acb5dcd7453345b"
+dependencies = [
+ "caseless",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1662,6 +1681,8 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_derive",
+ "serde_json",
+ "stream-httparse",
  "tokio",
  "toml",
  "url",
