@@ -14,7 +14,7 @@ fn test_res_with_body() {
     let mut res = Response::default();
     res.body("i don't know what should be there!");
     let str1: String = res.to_string();
-    assert_eq!("HTTP/1.1 200 OK\r\nContent-Type: html/text\r\nContent-Length: 34\r\ni don't know what should be there!", str1);
+    assert_eq!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 34\r\n\r\ni don't know what should be there!", str1);
 }
 
 #[test]

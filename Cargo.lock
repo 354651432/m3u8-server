@@ -1678,6 +1678,7 @@ dependencies = [
  "error-chain",
  "http",
  "json",
+ "regex",
  "reqwest",
  "serde",
  "serde_derive",

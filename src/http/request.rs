@@ -2,6 +2,7 @@
 
 use std::{
     collections::HashMap,
+    fmt::Display,
     io::{BufRead, BufReader, Read},
 };
 
@@ -17,10 +18,24 @@ pub struct Request {
     pub path: String,
     pub method: String,
     pub headers: HashMap<String, String>,
-    pub body: Option<String>,
+    pub body: Vec<u8>,
+
+    // 反序列化用的字段
+    body_str: String,
 }
 
 impl Request {
+    pub fn new() -> Self {
+        Self {
+            version: String::from("HTTP/1.1"),
+            path: String::from("/"),
+            method: String::from("GET"),
+            headers: Default::default(),
+            body: Default::default(),
+            body_str: Default::default(),
+        }
+    }
+
     // 这个时候 谁拥有stream是有由主调方决定 可以传值或者引用
     pub fn read_from_stream(stream: impl Read) -> Option<Request> {
         let mut reader = BufReader::new(stream);
@@ -60,13 +75,12 @@ impl Request {
             headers.insert(key?.trim().to_owned(), value?.trim().to_owned());
         }
 
-        let mut body = None;
+        let mut body = Vec::new();
         if let Some(content_length) = headers.get("Content-Length") {
             let content_length: Result<usize, _> = content_length.parse();
             if let Ok(content_length) = content_length {
-                let mut buf = Vec::with_capacity(content_length);
-                reader.read(&mut buf).ok()?;
-                body = Some(String::from_utf8_lossy(&buf).to_string());
+                body = Vec::with_capacity(content_length);
+                reader.read(&mut body).ok()?;
             }
         }
 
@@ -76,8 +90,18 @@ impl Request {
             version,
             headers,
             body,
+
+            body_str: Default::default(),
         })
     }
+
+    pub fn body_str(&self) -> String {
+        String::from_utf8_lossy(&self.body).to_string()
+    }
+
+    // pub fn body_str_ref(&self) -> &str {
+    //     &String::from_utf8_lossy(&self.body).to_string()
+    // }
 
     fn parse_status_line(buf: String) -> Option<(String, String, String)> {
         let mut it = buf.split_whitespace();
@@ -87,11 +111,31 @@ impl Request {
         Some((method, path.to_owned(), version.to_owned()))
     }
 
-    pub fn json<'a, T>(&'a self) -> Option<T>
+    pub fn json<'b, T>(&'b mut self) -> Option<T>
     where
-        T: Deserialize<'a>,
+        T: Deserialize<'b>,
     {
-        let ret: T = serde_json::from_str(self.body.as_ref()?).ok()?;
+        self.body_str = self.body_str();
+        let ret: T = serde_json::from_str(&self.body_str).ok()?;
         Some(ret)
+    }
+
+    pub fn header(&mut self, key: &str, value: &str) -> Option<String> {
+        self.headers.insert(key.to_owned(), value.to_owned())
+    }
+}
+
+impl Display for Request {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} {}\r\n", self.method, self.path, self.version)?;
+
+        let mut header_str = String::new();
+        for (key, value) in &self.headers {
+            write!(f, "{}: {}\r\n", key, value)?;
+        }
+        write!(f, "\r\n")?;
+
+        write!(f, "{}", self.body_str());
+        Ok(())
     }
 }
