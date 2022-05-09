@@ -1,8 +1,14 @@
-use std::{io::Write, net::TcpStream, time::Duration};
+use std::{
+    collections::HashMap,
+    io::{Read, Write},
+    net::TcpStream,
+    time::Duration,
+};
 
+use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use serde::Serialize;
 
-use super::{request::Request, response::*};
+use super::{request::Request, response::*, ReqLine};
 use regex::*;
 
 #[cfg(test)]
@@ -53,28 +59,82 @@ impl Url {
     }
 }
 
-struct HttpClient {}
+pub enum ReadWriter {
+    TcpStream(TcpStream),
+    SslStream(SslStream<TcpStream>),
+}
+
+impl Read for ReadWriter {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            ReadWriter::TcpStream(stream) => stream.read(buf),
+            ReadWriter::SslStream(stream) => stream.read(buf),
+        }
+    }
+}
+impl Write for ReadWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self {
+            ReadWriter::TcpStream(stream) => stream.write(buf),
+            ReadWriter::SslStream(stream) => stream.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        match self {
+            ReadWriter::TcpStream(stream) => stream.flush(),
+            ReadWriter::SslStream(stream) => stream.flush(),
+        }
+    }
+}
+pub struct HttpClient {}
 
 impl HttpClient {
     pub fn new() -> Self {
         Self {}
     }
 
-    #[no_mangle]
     pub fn get(&self, url: &str) -> Option<Response> {
         let url = Url::new(url)?;
-        let mut socket = match TcpStream::connect(url.to_host()) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err),
+        let mut stream = Self::build_stream(&url).ok()?;
+
+        let mut req = Self::build_req(&url, "GET");
+        req.header("Host", &url.host);
+
+        let buf = req.to_string();
+        stream.write(buf.as_bytes()).ok()?;
+
+        Response::from_stream(stream)
+    }
+
+    fn build_req(url: &Url, method: &str) -> Request {
+        Request::new(
+            ReqLine {
+                method: String::from(method),
+                path: String::from(&url.path),
+                version: String::from("HTTP/1.1"),
+            },
+            HashMap::new(),
+            Vec::new(),
+        )
+    }
+
+    fn build_stream(url: &Url) -> Result<ReadWriter, String> {
+        let mut stream: TcpStream = match TcpStream::connect(url.to_host()) {
+            Ok(stream) => stream,
+            Err(err) => return Err(err.to_string()),
         };
 
-        let mut req = Request::new();
-        req.path = url.path;
-        req.header("Host", &url.host);
-        socket.write(req.to_string().as_bytes()).ok()?;
+        if url.proto == "http" {
+            return Ok(ReadWriter::TcpStream(stream));
+        }
 
-        socket.set_write_timeout(Some(Duration::from_secs(3)));
-        Response::from_stream(socket)
+        let connector = SslConnector::builder(SslMethod::tls()).unwrap().build();
+        let mut stream: SslStream<TcpStream> = match connector.connect(&url.host, stream) {
+            Ok(stream) => stream,
+            Err(err) => return Err(err.to_string()),
+        };
+        Ok(ReadWriter::SslStream(stream))
     }
 
     pub fn post<T>(&self, url: &str, data: T) -> Option<Response>

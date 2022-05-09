@@ -1,7 +1,8 @@
-fn main() {
-    let ref a = A {};
-    f(a);
-}
+use work::http::http_client::HttpClient;
 
-struct A;
-fn f(a: &A) {}
+fn main() {
+    let res = HttpClient::new().get("https://www.baidu.com/").unwrap();
+
+    println!("{:?}", res.res);
+    println!("{:?}", res.headers);
+}
