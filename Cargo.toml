@@ -19,6 +19,7 @@ rustls = "*"
 serde = "*"
 serde_derive = "*"
 serde_json = "*"
+socks = "*"
 stream-httparse = "0.2.6"
 tokio = {version = "1", features = ["full"]}
 toml = "*"

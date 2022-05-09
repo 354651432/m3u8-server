@@ -8,7 +8,7 @@ fn main() {
     let stream = TcpStream::connect("www.baidu.com:443").unwrap();
     let mut stream = connector.connect("www.baidu.com", stream).unwrap();
 
-    stream.write("POST / HTTP/1.0\r\n\r\n".as_bytes()).unwrap();
+    stream.write(b"POST / HTTP/1.0\r\n\r\n").unwrap();
     let mut res = vec![];
     stream.read_to_end(&mut res).unwrap();
     println!("{}", String::from_utf8_lossy(&res));
