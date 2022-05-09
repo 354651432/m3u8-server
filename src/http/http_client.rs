@@ -27,7 +27,7 @@ pub struct Url {
 impl Url {
     //r"'(?P<title>[^']+)'\s+\((?P<year>\d{4})\)"
     pub fn new(url: &str) -> Option<Self> {
-        let reg = Regex::new(r"(?P<proto>https?)://(?P<host>[.\w]+)(?P<port>:\w+)?(?P<path>/.+)?")
+        let reg = Regex::new(r"(?P<proto>https?)://(?P<host>[^/]+)(?P<port>:\w+)?(?P<path>/.+)?")
             .unwrap();
         let mch = reg.captures(url)?;
 
