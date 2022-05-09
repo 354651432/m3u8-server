@@ -12,8 +12,15 @@ fn test_url() {
 
 #[test]
 fn test_get() {
-    let url = "http://127.0.0.1:8080/";
+    // let url = "http://127.0.0.1:8080/env.aniki";
+    let url = "http://127.0.0.1:2022/fuck";
     let res = HttpClient::new().get(url).unwrap();
 
-    panic!("{:?}", res.headers);
+    // panic!("{:?}", res.headers);
+}
+
+#[test]
+fn https_get_test() {
+    let url = "https://stackoverflow.com/questions/42503296/value-does-not-live-long-enough";
+    let res = HttpClient::new().get(url).unwrap();
 }

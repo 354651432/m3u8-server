@@ -1,4 +1,4 @@
-use std::{io::Write, net::TcpStream};
+use std::{io::Write, net::TcpStream, time::Duration};
 
 use serde::Serialize;
 
@@ -10,11 +10,11 @@ use regex::*;
 mod test;
 
 #[derive(Debug)]
-struct Url {
-    proto: String,
-    host: String,
-    port: usize,
-    path: String,
+pub struct Url {
+    pub proto: String,
+    pub host: String,
+    pub port: usize,
+    pub path: String,
 }
 
 impl Url {
@@ -48,7 +48,7 @@ impl Url {
         })
     }
 
-    fn to_host(&self) -> String {
+    pub fn to_host(&self) -> String {
         format!("{}:{}", self.host, self.port)
     }
 }
@@ -60,14 +60,20 @@ impl HttpClient {
         Self {}
     }
 
+    #[no_mangle]
     pub fn get(&self, url: &str) -> Option<Response> {
         let url = Url::new(url)?;
-        let mut socket = TcpStream::connect(url.to_host()).ok()?;
+        let mut socket = match TcpStream::connect(url.to_host()) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err),
+        };
+
         let mut req = Request::new();
         req.path = url.path;
         req.header("Host", &url.host);
         socket.write(req.to_string().as_bytes()).ok()?;
 
+        socket.set_write_timeout(Some(Duration::from_secs(3)));
         Response::from_stream(socket)
     }
 

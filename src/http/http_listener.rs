@@ -29,8 +29,8 @@ impl Iterator for HttpListener {
     fn next(&mut self) -> Option<Self::Item> {
         let stream = self.tcp.incoming().next()?.ok()?;
 
-        let req = Request::read_from_stream(&stream)?;
-        let res = Response::default();
+        let req = Request::from_stream(&stream)?;
+        let res = Response::success_res();
         Some(Context {
             req,
             res,

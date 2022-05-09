@@ -46,7 +46,7 @@ impl Request {
         while cnt < 1024 {
             let mut buf = String::new();
             reader.read_line(&mut buf).ok()?;
-            if buf.is_empty() {
+            if buf.trim().is_empty() {
                 break;
             }
             lines.push(buf);
@@ -95,7 +95,7 @@ impl Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\r\n", self.req)?;
         if self.headers.len() > 0 {
-            write!(f, "{}\r\n", header_tostr(&self.headers))?;
+            write!(f, "{}", header_tostr(&self.headers))?;
         }
         write!(f, "\r\n{}", self.body_str());
         Ok(())

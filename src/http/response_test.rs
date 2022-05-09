@@ -26,7 +26,11 @@ fn test_res_with_body() {
     let mut res = def_res();
     res.body("i don't know what should be there!");
     let str1: String = res.to_string();
+
+    // panic!("{}", str1);
+    // assert_eq!(str1, "");
     assert!(str1.contains("HTTP/1.1 200 OK\r\n"));
+    assert!(str1.contains("\r\nContent-Length:"));
     assert!(str1.contains("\r\n\r\ni don't know what should be there!"));
 }
 

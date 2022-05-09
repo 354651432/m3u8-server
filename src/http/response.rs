@@ -1,4 +1,3 @@
-use core::panic;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -44,7 +43,7 @@ impl Response {
         while cnt < 1024 {
             let mut buf = String::new();
             reader.read_line(&mut buf).ok()?;
-            if buf.is_empty() {
+            if buf.trim().is_empty() {
                 break;
             }
             lines.push(buf);
@@ -96,14 +95,72 @@ impl Response {
         self.header("Content-Length", str1.len().to_string());
         self.body = str1.as_bytes().to_vec();
     }
+
+    pub fn success_res() -> Self {
+        Self {
+            res: ResLine {
+                version: "HTTP/1.1".to_string(),
+                code: 200,
+                code_line: "OK".to_string(),
+            },
+            headers: HashMap::new(),
+            body: Vec::new(),
+        }
+    }
+
+    pub fn get_headers(&self) -> Headers {
+        let mut headers = self.headers.clone();
+        if self.body.len() > 0 {
+            headers.insert("Content-Length".to_string(), self.body.len().to_string());
+        }
+        headers.insert("Power-By".to_string(), "rust".to_string());
+        headers
+    }
 }
 
 impl Display for Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\r\n", self.res)?;
-        if self.headers.len() > 0 {
-            write!(f, "{}\r\n", header_tostr(&self.headers))?;
-        }
+
+        write!(f, "{}", header_tostr(&self.get_headers()))?;
+
         write!(f, "\r\n{}", self.body_str())
+    }
+}
+
+pub struct ResponseBuilder {
+    res: Option<Response>,
+}
+
+/// * Example
+/// ```
+/// let res: Response = ResponseBuilder::new.code(200).build();
+/// ```
+impl ResponseBuilder {
+    pub fn new() -> ResponseBuilder {
+        ResponseBuilder {
+            res: Some(Response {
+                res: ResLine {
+                    version: "HTTP/1.1".to_string(),
+                    code: 200,
+                    code_line: "OK".to_string(),
+                },
+                headers: HashMap::new(),
+                body: Vec::new(),
+            }),
+        }
+    }
+
+    // TODO
+    pub fn code(&mut self, code: usize) -> &mut Self {
+        match code {
+            200 => {}
+            _ => (),
+        }
+        self
+    }
+
+    pub fn build(&mut self) -> Response {
+        self.res.take().unwrap()
     }
 }

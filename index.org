@@ -12,3 +12,7 @@
 ** add config file
 ** add unit tests
 ** TODO self-write http Request ,Response, Application, Threadpool, incoming implement
+** TODO lazy_static
+   #+begin_src shell :title rust test command
+cargo test --lib -q test_getkey_ignorecase -- --nocapture
+   #+end_src
