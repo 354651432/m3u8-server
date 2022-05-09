@@ -27,7 +27,7 @@ impl Request {
     }
 
     // 这个时候 谁拥有stream是有由主调方决定 可以传值或者引用
-    pub fn read_from_stream(stream: impl Read) -> Option<Request> {
+    pub fn from_stream(stream: impl Read) -> Option<Request> {
         let mut reader = BufReader::new(stream);
 
         // 去掉开头的空行
@@ -70,7 +70,7 @@ impl Request {
             reader.read_to_end(&mut body);
         }
 
-        Some(Request { req, headers, body })
+        Some(Self { req, headers, body })
     }
 
     pub fn body_str(&self) -> String {
@@ -94,9 +94,10 @@ impl Request {
 impl Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\r\n", self.req)?;
-        write!(f, "{}\r\n", header_tostr(&self.headers))?;
-        write!(f, "\r\n")?;
-        write!(f, "{}", self.body_str());
+        if self.headers.len() > 0 {
+            write!(f, "{}\r\n", header_tostr(&self.headers))?;
+        }
+        write!(f, "\r\n{}", self.body_str());
         Ok(())
     }
 }

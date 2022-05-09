@@ -1,3 +1,4 @@
+use core::panic;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -6,81 +7,68 @@ use std::{
 
 use serde::Serialize;
 
+use super::{getkey_ignorecase, header_tostr, parse_headers, parse_resline, Headers, ResLine};
+
 #[cfg(test)]
 #[path = "response_test.rs"]
 mod response_test;
 
 #[derive(Debug)]
 pub struct Response {
-    pub version: String,
-    pub status: String,
-    pub headers: HashMap<String, String>,
+    pub res: ResLine,
+    pub headers: Headers,
     pub body: Vec<u8>,
 }
 
-impl Default for Response {
-    fn default() -> Self {
-        Self {
-            version: String::from("HTTP/1.1"),
-            status: String::from("200 OK"),
-            headers: HashMap::new(),
-            body: Vec::new(),
-        }
-    }
-}
-
-impl Display for Response {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}\r\n", self.version, self.status)?;
-
-        for (key, value) in &self.headers {
-            write!(f, "{}: {}\r\n", key, value)?;
-        }
-
-        if self.body.len() > 0 && self.headers.get("Content-Type").is_none() {
-            write!(f, "Content-Type: text/html\r\n")?;
-        }
-
-        if self.body.len() > 0 && self.headers.get("Content-Length").is_none() {
-            write!(f, "Content-Length: {}\r\n", self.body.len())?;
-        }
-
-        write!(f, "\r\n{}", self.body_str())
-    }
-}
-
 impl Response {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(res: ResLine, headers: Headers, body: Vec<u8>) -> Self {
+        Self { res, headers, body }
     }
 
-    pub fn from_stream(socket: impl Read) -> Option<Self> {
-        let mut ret = Self::new();
-        let mut reader = BufReader::new(socket);
-        reader.read_line(&mut ret.status).ok()?;
-        while ret.status.len() <= 0 {
-            reader.read_line(&mut ret.status).ok()?;
+    pub fn from_stream(stream: impl Read) -> Option<Self> {
+        let mut reader = BufReader::new(stream);
+
+        // 去掉开头的空行
+        let mut line = String::new();
+
+        let mut cnt = 0;
+        while line.len() <= 0 && cnt < 100 {
+            reader.read_line(&mut line).ok()?;
+            cnt += 1
         }
 
-        loop {
+        let res = parse_resline(&line)?;
+
+        let mut lines = Vec::new();
+        let mut cnt = 0;
+        while cnt < 1024 {
             let mut buf = String::new();
             reader.read_line(&mut buf).ok()?;
-            if buf.contains(":") {
-                let mut arr = buf.split(":");
-                ret.header(arr.next()?.trim(), arr.next()?.trim());
-            }
-            if buf.trim() == "" {
+            if buf.is_empty() {
                 break;
             }
+            lines.push(buf);
+            cnt += 1;
         }
 
-        if let Some(clen) = ret.headers.get("Content-Length") {
-            let clen = clen.trim().parse().ok()?;
-            ret.body = Vec::with_capacity(clen);
-            reader.read(&mut ret.body).ok()?;
+        let headers = parse_headers(&lines);
+
+        let mut body = Vec::new();
+        let content_length = getkey_ignorecase("content-length", &headers);
+
+        if let Some(content_length) = content_length {
+            if let Ok(capacity) = content_length.parse() {
+                body = Vec::with_capacity(capacity);
+                unsafe {
+                    body.set_len(capacity);
+                }
+                reader.read(&mut body);
+            }
+        } else {
+            reader.read_to_end(&mut body);
         }
 
-        Some(ret)
+        Some(Self { res, headers, body })
     }
 
     pub fn body_str(&self) -> String {
@@ -107,5 +95,15 @@ impl Response {
         self.header("Content-Type", "text/json");
         self.header("Content-Length", str1.len().to_string());
         self.body = str1.as_bytes().to_vec();
+    }
+}
+
+impl Display for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}\r\n", self.res)?;
+        if self.headers.len() > 0 {
+            write!(f, "{}\r\n", header_tostr(&self.headers))?;
+        }
+        write!(f, "\r\n{}", self.body_str())
     }
 }
