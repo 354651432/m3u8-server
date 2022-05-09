@@ -87,24 +87,18 @@ impl Write for ReadWriter {
         }
     }
 }
-pub struct HttpClient {}
+pub struct HttpClient {
+    headers: HashMap<String, String>,
+}
+
+static HTTP_VERION: &'static str = "HTTP/1.1";
 
 impl HttpClient {
     pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn get(&self, url: &str) -> Option<Response> {
-        let url = Url::new(url)?;
-        let mut stream = Self::build_stream(&url).ok()?;
-
-        let mut req = Self::build_req(&url, "GET");
-        req.header("Host", &url.host);
-
-        let buf = req.to_string();
-        stream.write(buf.as_bytes()).ok()?;
-
-        Response::from_stream(stream)
+        let mut headers = HashMap::new();
+        headers.insert(String::from("User-Agent"), String::from("curl/7.76.1"));
+        headers.insert(String::from("Accept"), String::from("*/*"));
+        Self { headers }
     }
 
     fn build_req(url: &Url, method: &str) -> Request {
@@ -112,7 +106,7 @@ impl HttpClient {
             ReqLine {
                 method: String::from(method),
                 path: String::from(&url.path),
-                version: String::from("HTTP/1.1"),
+                version: String::from(HTTP_VERION),
             },
             HashMap::new(),
             Vec::new(),
@@ -137,14 +131,39 @@ impl HttpClient {
         Ok(ReadWriter::SslStream(stream))
     }
 
-    pub fn post<T>(&self, url: &str, data: T) -> Option<Response>
-    where
-        T: Serialize,
-    {
-        todo!()
+    pub fn request(&self, url: &str, method: &str, data: Vec<u8>) -> Option<Response> {
+        let url = Url::new(url)?;
+        let mut stream = Self::build_stream(&url).ok()?;
+
+        let mut req = Self::build_req(&url, method.to_uppercase().as_ref());
+        req.header("Host", &url.host);
+        req.body = data;
+
+        for (key, value) in &self.headers {
+            req.header(key, value);
+        }
+
+        let buf = req.to_string();
+        stream.write(buf.as_bytes()).ok()?;
+
+        Response::from_stream(stream)
     }
 
-    pub fn add_header(key: &str, value: &str) {}
+    pub fn get(&self, url: &str) -> Option<Response> {
+        Self::request(&self, url, "GET", Vec::new())
+    }
 
-    fn parse_url() {}
+    pub fn post(&self, url: &str, data: Vec<u8>) -> Option<Response> {
+        Self::request(&self, url, "POST", data)
+    }
+
+    pub fn header<T, U>(&mut self, key: T, value: U) -> Option<String>
+    where
+        String: std::convert::From<T>,
+        String: std::convert::From<U>,
+    {
+        self.headers.insert(String::from(key), String::from(value))
+    }
+
+    // pub fn post
 }

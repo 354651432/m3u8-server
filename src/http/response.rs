@@ -61,7 +61,7 @@ impl Response {
                 unsafe {
                     body.set_len(capacity);
                 }
-                reader.read(&mut body);
+                reader.read_exact(&mut body);
             }
         } else {
             reader.read_to_end(&mut body);
