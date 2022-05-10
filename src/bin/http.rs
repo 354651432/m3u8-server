@@ -49,7 +49,17 @@ fn main() {
                     }
                 });
             } else {
-                ctx.res.body("<h1> it works");
+                ctx.res.body("<h1> it works</h1>");
+                let map = map.lock().unwrap();
+                ctx.res.body(
+                    format!(
+                        r"<ul><li>tasks {}</li><li>downlading {}</li><li>complete {}</li>",
+                        map.len(),
+                        map.iter().filter(|(key, value)| **value == true).count(),
+                        map.iter().filter(|(key, value)| **value == false).count(),
+                    )
+                    .as_str(),
+                );
             }
         });
     }

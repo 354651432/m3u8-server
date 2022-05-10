@@ -13,7 +13,7 @@ pub fn download(
     file_name: &str,
     proxy: Option<&str>,
     headers: HashMap<String, String>,
-) -> Result<(), String> {
+) -> Result<usize, String> {
     let mut req = HttpClient::new();
     if let Some(prox) = proxy {
         req.proxy(prox);
@@ -28,16 +28,21 @@ pub fn download(
     for c in md5.0 {
         write!(&mut md5_str, "{:x}", c);
     }
-    let md5_str = &md5_str[..9].light_green();
+    let md5_str = &md5_str[..9];
 
-    let tmp_file_name = format!("{file_name}.downloading [{}]", md5_str);
-    println!("create file {tmp_file_name}");
+    let tmp_file_name = format!("{file_name}.downloading.{}", md5_str);
+    println!(
+        "create file {}",
+        String::from(&tmp_file_name).as_str().light_blue()
+    );
+
     let mut fs = match std::fs::File::create(&tmp_file_name) {
         Ok(fs) => fs,
         Err(err) => return Err(err.to_string()),
     };
 
     let mut cnt = 0;
+    let mut size = 0;
     for line in &lines {
         let res = req.get(line)?;
 
@@ -52,16 +57,17 @@ pub fn download(
             cnt += 1;
             println!(
                 "downloading [{} {:3}/{:3}] {line}",
-                md5_str,
+                md5_str.light_green(),
                 cnt.to_string().light_yellow(),
                 lines.len().to_string().light_yellow()
             );
         };
-        if let Err(err) = fs.write(&res.body) {
-            return Err(err.to_string());
+        match fs.write(&res.body) {
+            Err(err) => return Err(err.to_string()),
+            Ok(size1) => size += size1,
         }
     }
 
     std::fs::rename(&tmp_file_name, &file_name);
-    Ok(())
+    Ok(size)
 }
