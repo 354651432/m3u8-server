@@ -1,6 +1,10 @@
-use std::{collections::HashMap, io::Write};
+use std::{collections::HashMap, fmt::Write, io::Write as IoWrite};
 
 use crate::{http::http_client::HttpClient, m3u8::parse};
+extern crate colorful;
+
+use colorful::Color;
+use colorful::Colorful;
 
 const SHOW_LOG: bool = true;
 
@@ -32,13 +36,23 @@ pub fn download(
 
         if SHOW_LOG {
             let mut line = String::from(line);
+            let md5 = md5::compute(url);
+            let mut md5_str = String::new();
+            for c in md5.0 {
+                write!(&mut md5_str, "{:x}", c);
+            }
             if line.len() > 20 {
                 let left = &line[..20];
                 let right = &line[line.len() - 20..];
                 line = format!("{left}....{right}");
             }
             cnt += 1;
-            println!("downloading [{}/{}] {line}", cnt, lines.len());
+            println!(
+                "downloading [{} {:3}/{:3}] {line}",
+                &md5_str[..9].light_green(),
+                cnt.to_string().light_yellow(),
+                lines.len().to_string().light_yellow()
+            );
         };
         if let Err(err) = fs.write(&res.body) {
             return Err(err.to_string());

@@ -6,13 +6,16 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use colorful::Colorful;
 use serde_derive::{Deserialize, Serialize};
 use work::{config::get_config, http::http_listener::HttpListener};
 
 fn main() {
     let config = get_config();
     let map = Arc::new(Mutex::new(HashMap::new()));
-    println!("server started at {}", config.bind);
+
+    let bind = format!("http://{}/", &config.bind);
+    println!("server started at {}", bind.light_green().bold());
     for mut ctx in HttpListener::bind(&config.bind) {
         let map = Arc::clone(&map);
         thread::spawn(move || {
@@ -64,7 +67,7 @@ fn download(url: String, headers: HashMap<String, String>, title: String) -> Joi
         ) {
             Ok(_) => true,
             Err(err) => {
-                println!("download err: {err}");
+                println!("download err: {}", err.light_yellow().bold());
                 false
             }
         }
