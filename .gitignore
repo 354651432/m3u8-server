@@ -6,3 +6,4 @@ result/
 /target
 __pycache__
 .gdb_history
+.DS_Store
