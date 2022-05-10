@@ -23,7 +23,14 @@ pub fn download(
 
     let lines = parse(url, &res.body_str());
 
-    let tmp_file_name = format!("{file_name}.downloading");
+    let md5 = md5::compute(url);
+    let mut md5_str = String::new();
+    for c in md5.0 {
+        write!(&mut md5_str, "{:x}", c);
+    }
+    let md5_str = &md5_str[..9].light_green();
+
+    let tmp_file_name = format!("{file_name}.downloading [{}]", md5_str);
     println!("create file {tmp_file_name}");
     let mut fs = match std::fs::File::create(&tmp_file_name) {
         Ok(fs) => fs,
@@ -36,11 +43,7 @@ pub fn download(
 
         if SHOW_LOG {
             let mut line = String::from(line);
-            let md5 = md5::compute(url);
-            let mut md5_str = String::new();
-            for c in md5.0 {
-                write!(&mut md5_str, "{:x}", c);
-            }
+
             if line.len() > 20 {
                 let left = &line[..20];
                 let right = &line[line.len() - 20..];
@@ -49,7 +52,7 @@ pub fn download(
             cnt += 1;
             println!(
                 "downloading [{} {:3}/{:3}] {line}",
-                &md5_str[..9].light_green(),
+                md5_str,
                 cnt.to_string().light_yellow(),
                 lines.len().to_string().light_yellow()
             );
