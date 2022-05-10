@@ -1,103 +1,50 @@
-use bytes::Bytes;
-use std::collections::HashMap;
-use std::fs;
-use std::io::Write;
+use std::{collections::HashMap, io::Write};
 
-pub async fn download_m3u8(
-    base_url: &str,
+use crate::{http::http_client::HttpClient, m3u8::parse};
+
+const SHOW_LOG: bool = true;
+
+pub fn download(
+    url: &str,
     file_name: &str,
-    headers: &HashMap<String, String>,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("beginning downloading {}", base_url);
+    proxy: Option<&str>,
+    headers: HashMap<String, String>,
+) -> Result<(), String> {
+    let mut req = HttpClient::new();
+    if let Some(prox) = proxy {
+        req.proxy(prox);
+    }
 
-    let client = build_client(headers)?;
-    let m3u8 = get_text(&client, base_url).await?;
+    let res = req.get(url)?;
 
-    let lines = m3u8.split("\n");
-    let tmp_name = format!("{}_tmp", file_name);
+    let lines = parse(url, &res.body_str());
 
-    let mut fs = match fs::File::create(&tmp_name) {
+    let tmp_file_name = format!("{file_name}.downloading");
+    println!("create file {tmp_file_name}");
+    let mut fs = match std::fs::File::create(&tmp_file_name) {
         Ok(fs) => fs,
-        Err(err) => {
-            eprintln!("{}", err);
-            return Ok(());
-        }
+        Err(err) => return Err(err.to_string()),
     };
 
-    for url in lines {
-        if url.starts_with("#") {
-            continue;
-        }
+    let mut cnt = 0;
+    for line in &lines {
+        let res = req.get(line)?;
 
-        if url == "" {
-            continue;
-        }
-
-        let full_url = match build_url(base_url, url) {
-            Some(value) => value,
-            None => continue,
+        if SHOW_LOG {
+            let mut line = String::from(line);
+            if line.len() > 20 {
+                let left = &line[..20];
+                let right = &line[line.len() - 20..];
+                line = format!("{left}....{right}");
+            }
+            cnt += 1;
+            println!("downloading [{}/{}] {line}", cnt, lines.len());
         };
-
-        println!("downloading {}", url);
-        let bytes = get(&client, &full_url).await?;
-        if let Err(err) = fs.write(&bytes[..]) {
-            eprintln!("{}", err);
+        if let Err(err) = fs.write(&res.body) {
+            return Err(err.to_string());
         }
     }
 
-    if let Err(err) = fs::rename(tmp_name, file_name) {
-        eprintln!("{}", err);
-    }
-    println!("{} downladed", file_name);
+    std::fs::rename(&tmp_file_name, &file_name);
     Ok(())
 }
-
-fn build_client(
-    headers: &HashMap<String, String>,
-) -> std::result::Result<reqwest::Client, reqwest::Error> {
-    let proxy = reqwest::Proxy::https("127.0.0.1:1087")?;
-    let client = reqwest::Client::builder().proxy(proxy).build()?;
-    for it in headers {
-        let _ = client.head(format!("{}:{}", it.0, it.1));
-    }
-    Ok(client)
-}
-
-async fn get(client: &reqwest::Client, url: &str) -> Result<Bytes, String> {
-    let resp = match client.get(url).send().await {
-        Ok(resp) => resp,
-        Err(_) => return Err(String::from("send error")),
-    };
-    if resp.status() != reqwest::StatusCode::OK {
-        return Err(format!("status code is {}", resp.status()));
-    }
-
-    match resp.bytes().await {
-        Ok(ret) => Ok(ret),
-        Err(err) => Err(format!("{}", err)),
-    }
-}
-
-async fn get_text(client: &reqwest::Client, url: &str) -> Result<String, String> {
-    let resp = client.get(url).send().await;
-    let resp = match resp {
-        Ok(ret) => ret,
-        Err(err) => return Err(format!("{}", err)),
-    };
-
-    if resp.status() != reqwest::StatusCode::OK {
-        return Err(format!("status code is {}", resp.status()));
-    }
-    match resp.text().await {
-        Ok(ret) => Ok(ret),
-        Err(err) => Err(format!("{}", err)),
-    }
-}
-
-fn build_url(url: &str, name: &str) -> Option<String> {
-    let idx = url.rfind("/")?;
-    Some(format!("{}/{}", &url[..idx], name))
-}
-
-#[cfg(test)]
-mod tests;

@@ -5,42 +5,23 @@ use std::fs;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub port: u16,
-    pub host: String,
+    pub bind: String,
+    pub proxy: String,
 }
 
-type Result<T> = std::result::Result<T, ConfigError>;
+pub fn get_config() -> Config {
+    let config = Config {
+        bind: "127.0.0.1:2022".to_string(),
+        proxy: "127.0.0.1:10808".to_string(),
+    };
 
-#[derive(Debug, Clone)]
-pub struct ConfigError {
-    pub err: String,
-}
+    let content = match fs::read_to_string("config.toml") {
+        Ok(content) => content,
+        Err(_) => return config,
+    };
 
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.err)
+    match toml::from_str(&content) {
+        Ok(config) => config,
+        Err(_) => return config,
     }
 }
-
-impl std::error::Error for ConfigError {}
-
-pub fn get_config() -> Result<Config> {
-    let def_config = Config {
-        host: "127.0.0.1".to_owned(),
-        port: 2022,
-    };
-
-    let file_content = match fs::read_to_string("config.toml") {
-        Ok(ret) => ret,
-        Err(_) => return Ok(def_config),
-    };
-
-    let config: Config = match toml::from_str(&file_content) {
-        Ok(ret) => ret,
-        Err(_) => return Ok(def_config),
-    };
-    Ok(config)
-}
-
-#[cfg(test)]
-mod tests;

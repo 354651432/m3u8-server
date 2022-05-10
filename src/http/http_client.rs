@@ -182,9 +182,13 @@ impl HttpClient {
         return self.build_https_stream(&url, stream?);
     }
 
-    pub fn request(&self, url: &str, method: &str, data: Vec<u8>) -> Option<Response> {
-        let url = Url::new(url)?;
-        let mut stream = self.build_stream(&url).ok()?;
+    pub fn request(&self, url: &str, method: &str, data: Vec<u8>) -> Result<Response, String> {
+        let url = match Url::new(url) {
+            Some(url) => url,
+            None => return Err("parse url failed".to_string()),
+        };
+
+        let mut stream = self.build_stream(&url)?;
 
         let mut req = Self::build_req(&url, method.to_uppercase().as_ref());
         req.header("Host", &url.host);
@@ -195,16 +199,21 @@ impl HttpClient {
         }
 
         let buf = req.to_string();
-        stream.write(buf.as_bytes()).ok()?;
+        if let Err(err) = stream.write(buf.as_bytes()) {
+            return Err(err.to_string());
+        }
 
-        Response::from_stream(stream)
+        match Response::from_stream(stream) {
+            Some(ret) => Ok(ret),
+            None => Err("read from stream failed".to_string()),
+        }
     }
 
-    pub fn get(&self, url: &str) -> Option<Response> {
+    pub fn get(&self, url: &str) -> Result<Response, String> {
         Self::request(&self, url, "GET", Vec::new())
     }
 
-    pub fn post(&self, url: &str, data: Vec<u8>) -> Option<Response> {
+    pub fn post(&self, url: &str, data: Vec<u8>) -> Result<Response, String> {
         Self::request(&self, url, "POST", data)
     }
 

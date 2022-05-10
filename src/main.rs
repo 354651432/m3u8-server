@@ -1,6 +1,2 @@
 #[tokio::main]
-async fn main() {
-    match work::server::run().await {
-        _ => (),
-    };
-}
+async fn main() {}

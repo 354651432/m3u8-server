@@ -99,7 +99,7 @@ impl Response {
     pub fn success_res() -> Self {
         Self {
             res: ResLine {
-                version: "HTTP/1.1".to_string(),
+                version: "HTTP/1.0".to_string(),
                 code: 200,
                 code_line: "OK".to_string(),
             },
