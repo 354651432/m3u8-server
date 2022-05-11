@@ -3,6 +3,8 @@ use regex::*;
 #[cfg(test)]
 mod test;
 
+pub mod download;
+
 pub fn parse(url: &str, content: &str) -> Vec<String> {
     let url = url.split("?").next().unwrap();
     let url = Regex::new(r"[^/]+\.m3u8.*$")

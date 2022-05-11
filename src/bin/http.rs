@@ -69,7 +69,7 @@ fn download(url: String, headers: HashMap<String, String>, title: String) -> Joi
     let config = get_config();
     let title = title.replace(" ", "_");
     thread::spawn(move || {
-        match work::download::download(
+        match work::m3u8::download::download(
             &url,
             format!("result/{title}.rs.ts").as_str(),
             Some(&config.proxy),

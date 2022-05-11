@@ -24,7 +24,13 @@ fn main() {
 
     let config = get_config();
     let time = Instant::now();
-    match download::download(&url, &file_name, Some(&config.proxy), HashMap::default()) {
+    match download::threadify_download(
+        &url,
+        &file_name,
+        config.threads,
+        Some(&config.proxy),
+        HashMap::default(),
+    ) {
         Err(err) => {
             eprintln!("{}", err.light_yellow().bold());
             return;

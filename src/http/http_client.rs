@@ -217,6 +217,10 @@ impl HttpClient {
         Self::request(&self, url, "POST", data)
     }
 
+    pub fn head(&self, url: &str) -> Result<Response, String> {
+        Self::request(&self, url, "HEAD", Vec::new())
+    }
+
     pub fn header<T, U>(&mut self, key: T, value: U) -> Option<String>
     where
         String: std::convert::From<T>,

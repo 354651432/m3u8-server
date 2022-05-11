@@ -1,23 +1,29 @@
-use std::io::Write;
+#![allow(unused)]
+use std::{
+    cmp::min,
+    collections::HashMap,
+    fs::{self, File},
+    io::{Seek, SeekFrom, Write},
+    sync::Arc,
+    thread,
+};
 
-use work::http::http_client::HttpClient;
-use work::m3u8::parse;
+use std::time;
+use work::{
+    http::http_client::HttpClient,
+    m3u8::{download::threadify_download, parse},
+};
 
 fn main() {
-    let url="https://hls-hw.xvideos-cdn.com/videos/hls/41/b8/0d/41b80d45100bf8593ddf0d4bfeb4e79d/hls-480p-1c7af.m3u8?e=1652166462&l=0&h=dfcfebd41acf9bb6b21391ff05c48200";
-    let mut req = HttpClient::new();
-    req.proxy("127.0.0.1:10808");
-    let res = req
-        .get(url)
-        // .get("https://cdn77-vid.xvideos-cdn.com/N6U89LVzQ-yk_BTRcdj4Wg==,1652111655/videos/hls/48/c5/11/48c5118c275bd352c30a2cc283440d62-1/hls-1080p-5ea9c0.ts")
-        .unwrap();
+    let url = "https://cdn77-vid.xvideos-cdn.com/41ERCH4AYGYEQBDLK8mPmg==,1652249953/videos/hls/b9/09/ba/b909baf80a531a41cca52bb3c7878c33/hls-720p-fa822.m3u8";
 
-    let lines = parse(url, &res.body_str());
+    let size = 17usize;
 
-    let mut fs = std::fs::File::create("abc.ts").unwrap();
-    for line in &lines {
-        let res = req.get(line).unwrap();
-        println!("downloading {}", line);
-        fs.write(&res.body).unwrap();
-    }
+    threadify_download(
+        url,
+        "test2.ts",
+        size,
+        Some("127.0.0.1:10808"),
+        HashMap::new(),
+    );
 }
