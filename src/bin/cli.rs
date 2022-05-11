@@ -72,7 +72,7 @@ fn parse_args(args: &mut std::env::Args) -> Option<(String, String)> {
             for c in md5.0 {
                 write!(&mut filename, "{:x}", c);
             }
-            filename
+            filename + ".ts"
         }
     };
 
