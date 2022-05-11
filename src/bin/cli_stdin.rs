@@ -10,7 +10,10 @@ use work::{
 fn main() {
     let config = get_config();
 
-    println!("type fetch code copied from chrome dev bar and enter return and ctrl-d ->");
+    println!(
+        "{}",
+        "type fetch code copied from chrome dev bar and enter return and ctrl-d ->".light_blue()
+    );
     let mut buf = Vec::new();
     std::io::stdin().read_to_end(&mut buf).unwrap();
     println!("{}", "code readed".light_blue());
