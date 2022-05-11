@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use regex::*;
 
 #[cfg(test)]
@@ -23,4 +25,13 @@ pub fn parse(url: &str, content: &str) -> Vec<String> {
         ret.push(format!("{}{}", &url, line));
     }
     ret
+}
+
+pub fn gen_file_name(url: &str) -> String {
+    let md5 = md5::compute(&url);
+    let mut filename = String::new();
+    for c in md5.0 {
+        write!(&mut filename, "{:x}", c);
+    }
+    filename + ".ts"
 }

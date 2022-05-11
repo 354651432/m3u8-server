@@ -1,3 +1,6 @@
+use super::FetchObj;
+use regex::*;
+
 #[test]
 fn test1() {
     let content = r#"
@@ -20,4 +23,18 @@ fn test1() {
         "credentials": "omit"
       });
     "#;
+
+    let content = Regex::new(r"^\s+fetch\(")
+        .unwrap()
+        .replace(content, "[")
+        .to_string();
+
+    let content = Regex::new(r"\);\s+$")
+        .unwrap()
+        .replace(&content, "]")
+        .to_string();
+
+    // println!("{}", content);
+    let obj = FetchObj::new(&content);
+    println!("{:#?}", obj);
 }

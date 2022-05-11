@@ -118,6 +118,10 @@ pub fn threadify_download(
     if let Some(prox) = proxy {
         client.proxy(prox);
     }
+    for (key, value) in headers {
+        client.header(key, value);
+    }
+
     let req = client.get(url)?;
 
     let urls = parse(url, String::from_utf8(req.body).unwrap().as_str());

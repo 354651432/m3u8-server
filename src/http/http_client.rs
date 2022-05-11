@@ -198,13 +198,21 @@ impl HttpClient {
             req.header(key, value);
         }
 
+        // println!("{:#?}", req.headers);
         let buf = req.to_string();
         if let Err(err) = stream.write(buf.as_bytes()) {
             return Err(err.to_string());
         }
 
         match Response::from_stream(stream) {
-            Some(ret) => Ok(ret),
+            Some(res) => {
+                let code = res.res.code;
+                if code >= 200 && code <= 300 {
+                    Ok(res)
+                } else {
+                    Err(format!("response code is {}", code))
+                }
+            }
             None => Err("read from stream failed".to_string()),
         }
     }

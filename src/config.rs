@@ -8,6 +8,7 @@ pub struct Config {
     pub bind: String,
     pub proxy: String,
     pub threads: usize,
+    pub user_agent: String,
 }
 
 pub fn get_config() -> Config {
@@ -15,11 +16,12 @@ pub fn get_config() -> Config {
         bind: "127.0.0.1:2022".to_string(),
         proxy: "127.0.0.1:10808".to_string(),
         threads: 17,
+        user_agent: "rust".to_string(),
     };
 
     let content = match fs::read_to_string("m3u8_downloader.toml") {
         Ok(content) => content,
-        Err(_) => match fs::read_to_string("~/m3u8_downloader.toml") {
+        Err(err) => match fs::read_to_string("~/m3u8_downloader.toml") {
             Ok(content) => content,
             Err(_) => return config,
         },
@@ -27,6 +29,8 @@ pub fn get_config() -> Config {
 
     match toml::from_str(&content) {
         Ok(config) => config,
-        Err(_) => return config,
+        Err(err) => {
+            return config;
+        }
     }
 }
