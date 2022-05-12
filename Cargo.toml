@@ -5,6 +5,7 @@ name = "work"
 version = "0.1.0"
 
 [dependencies]
+clap = {version = "3.1.18", features = ["derive"]}
 colorful = "0.2.1"
 md5 = "0.7.0"
 openssl = "0.10"

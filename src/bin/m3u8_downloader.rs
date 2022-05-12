@@ -8,7 +8,6 @@ use std::time::Instant;
 
 use colorful::Color;
 use colorful::Colorful;
-use work::config::get_config;
 use work::m3u8::download;
 
 fn main() {

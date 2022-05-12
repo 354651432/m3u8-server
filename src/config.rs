@@ -1,36 +1,31 @@
-use serde_derive::Deserialize;
-use std::fmt;
-use std::fmt::Debug;
-use std::fs;
+use clap::{Args, Parser, Subcommand};
 
-#[derive(Deserialize, Debug)]
+#[derive(Parser, Debug)]
+#[clap(version, about = "threadify m3u8 link downlder")]
 pub struct Config {
-    pub bind: String,
-    pub proxy: String,
+    #[clap(
+        long,
+        help = "read copy as fetch from chrome dev network tool in stdin "
+    )]
+    pub stdin: bool,
+
+    #[clap(
+        long,
+        short,
+        default_value_t = 20,
+        help = "number of threads default 20"
+    )]
     pub threads: usize,
-    pub user_agent: String,
-}
 
-pub fn get_config() -> Config {
-    let config = Config {
-        bind: "127.0.0.1:2022".to_string(),
-        proxy: "127.0.0.1:10808".to_string(),
-        threads: 17,
-        user_agent: "rust".to_string(),
-    };
+    #[clap(long, short, help = "start a webserver bind option eg: 127.0.0.1:2022")]
+    pub bind: Option<String>,
 
-    let content = match fs::read_to_string("m3u8_downloader.toml") {
-        Ok(content) => content,
-        Err(err) => match fs::read_to_string("~/m3u8_downloader.toml") {
-            Ok(content) => content,
-            Err(_) => return config,
-        },
-    };
+    #[clap(long, short, help = "socks5 proxy eg: 127.0.0.1:10808")]
+    pub proxy: Option<String>,
 
-    match toml::from_str(&content) {
-        Ok(config) => config,
-        Err(err) => {
-            return config;
-        }
-    }
+    #[clap(help = ".m3u8 download url")]
+    pub url: Option<String>,
+
+    #[clap(help = ".m3u8 saved file name")]
+    pub file: Option<String>,
 }

@@ -8,7 +8,7 @@ use std::{
 
 use colorful::Colorful;
 use serde_derive::{Deserialize, Serialize};
-use work::{config::get_config, http::http_listener::HttpListener};
+use work::http::http_listener::HttpListener;
 
 fn main() {
     let config = get_config();
@@ -82,16 +82,4 @@ fn download(url: String, headers: HashMap<String, String>, title: String) -> Joi
             }
         }
     })
-}
-
-#[derive(Deserialize)]
-struct ReqData {
-    url: String,
-    headers: HashMap<String, String>,
-    title: String,
-}
-
-#[derive(Serialize)]
-struct ResData {
-    code: usize,
 }

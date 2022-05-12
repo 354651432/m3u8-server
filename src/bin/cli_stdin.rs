@@ -2,7 +2,6 @@ use std::{collections::HashMap, io::Read, time::Instant};
 
 use colorful::Colorful;
 use work::{
-    config::get_config,
     fetch::FetchObj,
     m3u8::{download, gen_file_name},
 };
