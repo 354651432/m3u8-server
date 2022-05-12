@@ -1,0 +1,25 @@
+* related technolegey
+** http client
+** file concat
+** http server
+** json proc
+** thread
+** thread sync
+   
+* rust todos
+** rust return Result
+** modify to a directory
+** add config file
+** add unit tests
+** DONE self-write http Request ,Response, Application, Threadpool, incoming implement
+** TODO lazy_static
+   #+begin_src shell :title rust test command
+cargo test --lib -q test_getkey_ignorecase -- --nocapture
+   #+end_src
+** TODO dyn + muliti trait
+** TODO connection timeout
+** DONE add process show
+** DONE add http response code treat 
+** DONE cli utils
+** DONE http/1.1 trunk parse
+

@@ -1,25 +1,20 @@
-* related technolegey
-** http client
-** file concat
-** http server
-** json proc
-** thread
-** thread sync
-   
-* rust todos
-** rust return Result
-** modify to a directory
-** add config file
-** add unit tests
-** TODO self-write http Request ,Response, Application, Threadpool, incoming implement
-** TODO lazy_static
-   #+begin_src shell :title rust test command
-cargo test --lib -q test_getkey_ignorecase -- --nocapture
-   #+end_src
-** TODO dyn + muliti trait
-** TODO connection timeout
-** DONE add process show
-** DONE add http response code treat 
-** TODO cli utils
-** TODO http/1.1 trunk parse
+* m3u8 link downloader
+  #+begin_src shell
+USAGE:
+    m3u8 [OPTIONS] [ARGS]
 
+ARGS:
+    <URL>     .m3u8 download url
+    <FILE>    .m3u8 saved file name
+
+OPTIONS:
+    -b, --bind <BIND>          start a webserver bind option eg: 127.0.0.1:2022
+    -h, --help                 Print help information
+    -p, --proxy <PROXY>        socks5 proxy eg: 127.0.0.1:10808 [env:
+                               ALL_PROXY=socks5://127.0.0.1:10808]
+        --stdin                read copy as fetch from chrome dev network tool in stdin 
+    -t, --threads <THREADS>    number of threads [default: 20]
+    -V, --version              Print version information
+  #+end_src
+
+chrome extension client [[https://github.com/354651432/m3u8-downloader-chrome-ext]]
