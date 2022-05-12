@@ -63,11 +63,54 @@ impl Response {
                 }
                 reader.read_exact(&mut body);
             }
-        } else {
-            reader.read_to_end(&mut body);
+        } else if let Some(value) = getkey_ignorecase("Transfer-Encoding", &headers) {
+            if value.to_lowercase() == "chunked" {
+                body = Self::read_trunked_stream(reader);
+            }
+            // reader.read_to_end(&mut body);
         }
 
         Some(Self { res, headers, body })
+    }
+
+    fn read_trunked_stream(stream: impl Read) -> Vec<u8> {
+        let mut buf = Vec::new();
+        let mut reader = BufReader::new(stream);
+        // loop {
+        //     let mut line = String::new();
+        //     reader.read_line(&mut line).unwrap();
+        //     println!("{line}");
+        //     if line.trim().is_empty() {
+        //         break;
+        //     }
+        // }
+
+        println!("begin read trunk");
+
+        loop {
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+
+            let line = line.trim();
+            if line == "0" || line.is_empty() {
+                break;
+            }
+
+            println!("line {line}");
+            let length = usize::from_str_radix(&line, 16).unwrap();
+            let mut local_buf = vec![0u8; length];
+
+            reader.read_exact(&mut local_buf).unwrap();
+            for i in local_buf {
+                buf.push(i);
+            }
+
+            // 读数据结束的\r\n
+            let mut buf = vec![0u8; 2];
+            reader.read_exact(&mut buf).unwrap();
+        }
+
+        buf
     }
 
     pub fn body_str(&self) -> String {

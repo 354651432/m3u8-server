@@ -101,7 +101,7 @@ pub struct HttpClient {
     proxy: String,
 }
 
-static HTTP_VERION: &'static str = "HTTP/1.0";
+static HTTP_VERION: &'static str = "HTTP/1.1";
 static READ_TIMEOUT: Duration = Duration::from_millis(100);
 static WRITE_TIMEOUT: Duration = Duration::from_millis(100);
 

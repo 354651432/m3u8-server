@@ -16,8 +16,10 @@
    #+begin_src shell :title rust test command
 cargo test --lib -q test_getkey_ignorecase -- --nocapture
    #+end_src
-** DONE cli utils
 ** TODO dyn + muliti trait
 ** TODO connection timeout
 ** DONE add process show
-** TODO add http response code treat 
+** DONE add http response code treat 
+** TODO cli utils
+** TODO http/1.1 trunk parse
+
