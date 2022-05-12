@@ -9,12 +9,7 @@ pub struct Config {
     )]
     pub stdin: bool,
 
-    #[clap(
-        long,
-        short,
-        default_value_t = 20,
-        help = "number of threads default 20"
-    )]
+    #[clap(long, short, default_value_t = 20, help = "number of threads")]
     pub threads: usize,
 
     #[clap(long, short, help = "start a webserver bind option eg: 127.0.0.1:2022")]
