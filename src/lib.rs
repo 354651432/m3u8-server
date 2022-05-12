@@ -194,13 +194,12 @@ fn download(config: Config) {
 pub fn run() {
     let mut config = Config::parse();
     if let Some(_) = config.bind {
-        println!("{:#?}", &config);
         bind(config);
     } else if config.stdin {
         stdin(config);
     } else if let Some(_) = config.url {
         download(config);
     } else {
-        println!("--help for a help")
+        // println!("--help for a help")
     }
 }
