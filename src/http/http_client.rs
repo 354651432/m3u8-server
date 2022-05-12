@@ -117,7 +117,7 @@ impl HttpClient {
     }
 
     pub fn proxy(&mut self, proxy: &str) -> &Self {
-        self.proxy = String::from(proxy);
+        self.proxy = String::from(proxy.to_lowercase().replace("socks5://", ""));
         self
     }
 
@@ -183,7 +183,7 @@ impl HttpClient {
     }
 
     pub fn request(&self, url: &str, method: &str, data: Vec<u8>) -> Result<Response, String> {
-        let url = match Url::new(url) {
+        let url = match Url::new(url.trim()) {
             Some(url) => url,
             None => return Err("parse url failed".to_string()),
         };
