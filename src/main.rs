@@ -1,3 +1,3 @@
 fn main() {
-    work::run()
+    m3u8::run()
 }

@@ -1,7 +1,7 @@
 [package]
-default-run = "work"
+default-run = "m3u8"
 edition = "2021"
-name = "work"
+name = "m3u8"
 version = "0.1.0"
 
 [dependencies]
