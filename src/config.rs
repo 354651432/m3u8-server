@@ -1,11 +1,7 @@
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[clap(
-    version,
-    about = "threadify m3u8 link downlder",
-    arg_required_else_help = true
-)]
+#[clap(version, about = "threadify m3u8 link downlder")]
 pub struct Config {
     #[clap(
         long,

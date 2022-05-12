@@ -2,7 +2,6 @@
 
 use std::{
     collections::HashMap,
-    ffi::OsString,
     fmt::Write,
     fs,
     io::Read,
@@ -11,7 +10,7 @@ use std::{
     time::Instant,
 };
 
-use clap::{Args, Command, Parser};
+use clap::{IntoApp, Parser};
 use colorful::Colorful;
 use config::Config;
 use serde_derive::{Deserialize, Serialize};
@@ -25,7 +24,6 @@ pub mod config;
 pub mod fetch;
 pub mod http;
 pub mod m3u8;
-// pub mod server;
 
 fn bind(config: Config) {
     #[derive(Deserialize)]
@@ -200,6 +198,6 @@ pub fn run() {
     } else if let Some(_) = config.url {
         download(config);
     } else {
-        // println!("--help for a help")
+        Config::command().print_help();
     }
 }
