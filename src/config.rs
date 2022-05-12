@@ -15,7 +15,12 @@ pub struct Config {
     #[clap(long, short, help = "start a webserver bind option eg: 127.0.0.1:2022")]
     pub bind: Option<String>,
 
-    #[clap(long, short, help = "socks5 proxy eg: 127.0.0.1:10808")]
+    #[clap(
+        long,
+        short,
+        env = "ALL_PROXY",
+        help = "socks5 proxy eg: 127.0.0.1:10808"
+    )]
     pub proxy: Option<String>,
 
     #[clap(help = ".m3u8 download url")]
