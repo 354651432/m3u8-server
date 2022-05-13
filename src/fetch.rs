@@ -53,10 +53,7 @@ impl FetchObj {
                 method: opt.method.clone(),
                 mode: opt.mode.clone(),
                 credentials: opt.credentials.clone(),
-                referrer: match &opt.referrer {
-                    Some(it) => Some(it.clone()),
-                    None => None,
-                },
+                referrer: opt.referrer.as_ref().cloned(),
             },
         }
     }

@@ -31,7 +31,7 @@ impl Url {
             .unwrap();
         let mch = reg.captures(url)?;
 
-        let proto = mch.name("proto")?.as_str().to_lowercase().to_owned();
+        let proto = mch.name("proto")?.as_str().to_lowercase();
         Some(Self {
             host: mch.name("host")?.as_str().to_owned(),
             port: match mch.name("port") {
@@ -96,12 +96,13 @@ impl Write for ReadWriter {
         }
     }
 }
+#[derive(Default)]
 pub struct HttpClient {
     headers: HashMap<String, String>,
     proxy: String,
 }
 
-static HTTP_VERION: &'static str = "HTTP/1.1";
+static HTTP_VERION: &str = "HTTP/1.1";
 static READ_TIMEOUT: Duration = Duration::from_millis(100);
 static WRITE_TIMEOUT: Duration = Duration::from_millis(100);
 
@@ -117,7 +118,7 @@ impl HttpClient {
     }
 
     pub fn proxy(&mut self, proxy: &str) -> &Self {
-        self.proxy = String::from(proxy.to_lowercase().replace("socks5://", ""));
+        self.proxy = proxy.to_lowercase().replace("socks5://", "");
         self
     }
 
@@ -143,7 +144,7 @@ impl HttpClient {
 
         match TcpStream::connect(url.to_host()) {
             Ok(stream) => Ok(ReadWriter::TcpStream(stream)),
-            Err(err) => return Err(err.to_string()),
+            Err(err) => Err(err.to_string()),
         }
     }
 
@@ -174,12 +175,12 @@ impl HttpClient {
         }
     }
 
-    fn build_stream(&self, url: &Url) -> Result<ReadWriter, String> {
+    fn build_stream(&self, url: Url) -> Result<ReadWriter, String> {
         let stream = self.build_base_stream(&url);
         if url.proto.to_lowercase() == "http" {
             return stream;
         }
-        return self.build_https_stream(&url, stream?);
+        self.build_https_stream(&url, stream?)
     }
 
     pub fn request(&self, url: &str, method: &str, data: Vec<u8>) -> Result<Response, String> {
@@ -188,11 +189,11 @@ impl HttpClient {
             None => return Err("parse url failed".to_string()),
         };
 
-        let mut stream = self.build_stream(&url)?;
-
         let mut req = Self::build_req(&url, method.to_uppercase().as_ref());
         req.header("Host", &url.host);
         req.body = data;
+
+        let mut stream = self.build_stream(url)?;
 
         for (key, value) in &self.headers {
             req.header(key, value);
@@ -207,7 +208,7 @@ impl HttpClient {
         match Response::from_stream(stream) {
             Some(res) => {
                 let code = res.res.code;
-                if code >= 200 && code <= 300 {
+                if (200..=300).contains(&code) {
                     Ok(res)
                 } else {
                     Err(format!("response code is {}", code))
@@ -218,15 +219,15 @@ impl HttpClient {
     }
 
     pub fn get(&self, url: &str) -> Result<Response, String> {
-        Self::request(&self, url, "GET", Vec::new())
+        Self::request(self, url, "GET", Vec::new())
     }
 
     pub fn post(&self, url: &str, data: Vec<u8>) -> Result<Response, String> {
-        Self::request(&self, url, "POST", data)
+        Self::request(self, url, "POST", data)
     }
 
     pub fn head(&self, url: &str) -> Result<Response, String> {
-        Self::request(&self, url, "HEAD", Vec::new())
+        Self::request(self, url, "HEAD", Vec::new())
     }
 
     pub fn header<T, U>(&mut self, key: T, value: U) -> Option<String>

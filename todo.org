@@ -12,12 +12,45 @@
 ** add config file
 ** add unit tests
 ** DONE self-write http Request ,Response, Application, Threadpool, incoming implement
-** TODO lazy_static
+** DONE lazy_static
+   #+begin_src rust
+#[macro_use]
+extern crate lazy_static;
+
+use std::{collections::HashMap, sync::Mutex, thread};
+
+lazy_static! {
+    static ref HASHMAP: Mutex<HashMap<u32, String>> = Mutex::new(HashMap::new());
+}
+
+fn main() {
+    let join1 = thread::spawn(|| {
+        let mut hash_map = HASHMAP.lock().unwrap();
+        hash_map.insert(55, "thread1 44".to_string());
+        hash_map.insert(33, "thread1 44".to_string());
+    });
+
+    let join2 = thread::spawn(|| {
+        let mut hash_map = HASHMAP.lock().unwrap();
+        hash_map.insert(4, "thread2 44".to_string());
+        hash_map.insert(8, "thread2 44".to_string());
+    });
+    join1.join().unwrap();
+    join2.join().unwrap();
+
+    let mut hash_map = HASHMAP.lock().unwrap();
+    hash_map.insert(99, "main 44".to_string());
+    hash_map.insert(77, "main 44".to_string());
+
+    println!("{:#?}", hash_map)
+}
+
+   #+end_src
    #+begin_src shell :title rust test command
 cargo test --lib -q test_getkey_ignorecase -- --nocapture
    #+end_src
 ** TODO dyn + muliti trait
-** TODO connection timeout
+** DONE connection timeout
 ** DONE add process show
 ** DONE add http response code treat 
 ** DONE cli utils

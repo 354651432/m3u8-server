@@ -34,7 +34,7 @@ impl Request {
         let mut line = String::new();
 
         let mut cnt = 0;
-        while line.len() <= 0 && cnt < 100 {
+        while line.trim().is_empty() && cnt < 100 {
             reader.read_line(&mut line).ok()?;
             cnt += 1
         }
@@ -60,10 +60,7 @@ impl Request {
 
         if let Some(content_length) = content_length {
             if let Ok(capacity) = content_length.parse() {
-                body = Vec::with_capacity(capacity);
-                unsafe {
-                    body.set_len(capacity);
-                }
+                body = vec![0u8; capacity];
                 reader.read(&mut body);
             }
         } else if (req.method == "POST" || req.method == "PUT") {

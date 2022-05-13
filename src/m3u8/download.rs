@@ -78,7 +78,7 @@ pub fn download(
 
 pub fn threadify_download_vec(
     client: Arc<HttpClient>,
-    urls: &Vec<String>,
+    urls: &[String],
     file: &mut File,
 ) -> Result<usize, String> {
     let mut threads = Vec::new();

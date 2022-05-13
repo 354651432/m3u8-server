@@ -8,13 +8,13 @@ pub mod response;
 mod test;
 
 type Headers = HashMap<String, String>;
-pub fn parse_headers(lines: &Vec<String>) -> Headers {
+pub fn parse_headers(lines: &[String]) -> Headers {
     let mut ret = HashMap::new();
     for line in lines {
-        if !line.contains(":") {
+        if !line.contains(':') {
             continue;
         }
-        let mut iter = line.split(":");
+        let mut iter = line.split(':');
         let key = iter.next().unwrap();
         let key = key.trim().trim();
         let value = iter.next().unwrap().trim();

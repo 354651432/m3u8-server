@@ -31,7 +31,7 @@ impl Response {
         let mut line = String::new();
 
         let mut cnt = 0;
-        while line.len() <= 0 && cnt < 100 {
+        while line.trim().is_empty() && cnt < 100 {
             reader.read_line(&mut line).ok()?;
             cnt += 1
         }
@@ -57,10 +57,7 @@ impl Response {
 
         if let Some(content_length) = content_length {
             if let Ok(capacity) = content_length.parse() {
-                body = Vec::with_capacity(capacity);
-                unsafe {
-                    body.set_len(capacity);
-                }
+                body = vec![0u8; capacity];
                 reader.read_exact(&mut body);
             }
         } else if let Some(value) = getkey_ignorecase("Transfer-Encoding", &headers) {
@@ -97,7 +94,7 @@ impl Response {
             }
 
             println!("line {line}");
-            let length = usize::from_str_radix(&line, 16).unwrap();
+            let length = usize::from_str_radix(line, 16).unwrap();
             let mut local_buf = vec![0u8; length];
 
             reader.read_exact(&mut local_buf).unwrap();
@@ -153,7 +150,7 @@ impl Response {
 
     pub fn get_headers(&self) -> Headers {
         let mut headers = self.headers.clone();
-        if self.body.len() > 0 {
+        if !self.body.is_empty() {
             headers.insert("Content-Length".to_string(), self.body.len().to_string());
         }
         headers.insert("Power-By".to_string(), "rust".to_string());
@@ -171,6 +168,7 @@ impl Display for Response {
     }
 }
 
+#[derive(Default)]
 pub struct ResponseBuilder {
     res: Option<Response>,
 }
@@ -195,11 +193,9 @@ impl ResponseBuilder {
     }
 
     // TODO
+    #[deny(clippy::single_match)]
     pub fn code(&mut self, code: usize) -> &mut Self {
-        match code {
-            200 => {}
-            _ => (),
-        }
+        if code == 200 {}
         self
     }
 

@@ -66,10 +66,7 @@ fn bind(config: Config) {
                     drop(mutex);
 
                     let file_name = format!("{dirname}/{}.ts", &req_data.title);
-                    let proxy = match config.proxy.as_ref() {
-                        Some(proxy) => Some(proxy.as_str()),
-                        None => None,
-                    };
+                    let proxy = config.proxy.as_deref();
                     let result = threadify_download(
                         &req_data.url,
                         &file_name,
@@ -78,7 +75,7 @@ fn bind(config: Config) {
                         req_data.headers,
                     );
                     let mut mutex = map.lock().unwrap();
-                    if let Ok(_) = result {
+                    if result.is_ok() {
                         mutex.insert(String::from(&req_data.url), true);
                     } else {
                         mutex.remove(&req_data.url);
@@ -91,8 +88,8 @@ fn bind(config: Config) {
                     format!(
                         r"<ul><li>tasks {}</li><li>downlading {}</li><li>complete {}</li>",
                         map.len(),
-                        map.iter().filter(|(key, value)| **value == true).count(),
-                        map.iter().filter(|(key, value)| **value == false).count(),
+                        map.iter().filter(|(key, value)| **value).count(),
+                        map.iter().filter(|(key, value)| !**value).count(),
                     )
                     .as_str(),
                 );
@@ -120,14 +117,10 @@ fn stdin(config: Config) {
         None => HashMap::default(),
     };
 
-    let proxy = match config.proxy.as_ref() {
-        Some(proxy) => Some(proxy.as_str()),
-        None => None,
-    };
+    let proxy = config.proxy.as_deref();
     match threadify_download(&obj.url, &file_name, config.threads, proxy, headers) {
         Err(err) => {
             eprintln!("{}", err.light_yellow().bold());
-            return;
         }
         Ok(size) => {
             let span = Instant::now() - time;
@@ -158,10 +151,7 @@ fn make_filename(config: &Config) -> String {
 
 fn download(config: Config) {
     let time = Instant::now();
-    let proxy = match config.proxy.as_ref() {
-        Some(proxy) => Some(proxy.as_str()),
-        None => None,
-    };
+    let proxy = config.proxy.as_deref();
 
     let file_name = make_filename(&config);
     match threadify_download(
@@ -173,7 +163,6 @@ fn download(config: Config) {
     ) {
         Err(err) => {
             eprintln!("{}", err.light_yellow().bold());
-            return;
         }
         Ok(size) => {
             let span = Instant::now() - time;
@@ -191,11 +180,11 @@ fn download(config: Config) {
 
 pub fn run() {
     let mut config = Config::parse();
-    if let Some(_) = config.bind {
+    if config.bind.is_some() {
         bind(config);
     } else if config.stdin {
         stdin(config);
-    } else if let Some(_) = config.url {
+    } else if config.url.is_some() {
         download(config);
     } else {
         Config::command().print_help();
