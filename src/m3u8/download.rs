@@ -124,7 +124,7 @@ pub fn threadify_download(
 
     let req = client.get(url)?;
 
-    let urls = parse(url, String::from_utf8(req.body).unwrap().as_str());
+    let urls = parse(url, String::from_utf8_lossy(&req.body).to_string().as_str());
 
     let mut begin = 0;
 
