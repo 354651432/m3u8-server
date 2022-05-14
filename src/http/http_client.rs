@@ -134,7 +134,7 @@ impl HttpClient {
             return Err(err.to_string());
         }
 
-        match Response::from_stream(LocalRead::new(stream)) {
+        match Response::from_stream(LocalRead(stream)) {
             Some(res) => {
                 let code = res.res.code;
                 if (200..=300).contains(&code) {

@@ -43,16 +43,10 @@ impl IReadWriter for HttpWriter {
 }
 
 // 为了让 IReadWriter 特征对象实现 Read
-pub struct LocalRead {
-    stream: Box<dyn IReadWriter>,
-}
-impl LocalRead {
-    pub fn new(stream: Box<dyn IReadWriter>) -> Self {
-        Self { stream }
-    }
-}
+pub struct LocalRead(pub Box<dyn IReadWriter>);
+
 impl Read for LocalRead {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        self.stream.read(buf)
+        self.0.read(buf)
     }
 }
