@@ -9,6 +9,8 @@ use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use serde::Serialize;
 use socks::Socks5Stream;
 
+use super::rwiter::*;
+use super::url::*;
 use super::{request::Request, response::*, ReqLine};
 use regex::*;
 
@@ -16,86 +18,6 @@ use regex::*;
 #[path = "http_client_test.rs"]
 mod test;
 
-#[derive(Debug)]
-pub struct Url {
-    pub proto: String,
-    pub host: String,
-    pub port: usize,
-    pub path: String,
-}
-
-impl Url {
-    //r"'(?P<title>[^']+)'\s+\((?P<year>\d{4})\)"
-    pub fn new(url: &str) -> Option<Self> {
-        let reg = Regex::new(r"(?P<proto>https?)://(?P<host>[^/]+)(?P<port>:\w+)?(?P<path>/.+)?")
-            .unwrap();
-        let mch = reg.captures(url)?;
-
-        let proto = mch.name("proto")?.as_str().to_lowercase();
-        Some(Self {
-            host: mch.name("host")?.as_str().to_owned(),
-            port: match mch.name("port") {
-                Some(port) => {
-                    let port = port.as_str()[1..].parse().ok()?;
-                    port
-                }
-                None => {
-                    if &proto == "http" {
-                        80
-                    } else {
-                        443
-                    }
-                }
-            },
-            proto,
-            path: match mch.name("path") {
-                Some(path) => path.as_str().to_owned(),
-                None => "/".to_owned(),
-            },
-        })
-    }
-
-    pub fn to_host(&self) -> String {
-        format!("{}:{}", self.host, self.port)
-    }
-}
-
-pub enum ReadWriter {
-    TcpStream(TcpStream),
-    Socks5Stream(Socks5Stream),
-    SslStream(SslStream<TcpStream>),
-    SslStreamSS(SslStream<Socks5Stream>),
-}
-
-impl Read for ReadWriter {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        match self {
-            ReadWriter::TcpStream(stream) => stream.read(buf),
-            ReadWriter::SslStream(stream) => stream.read(buf),
-            ReadWriter::Socks5Stream(stream) => stream.read(buf),
-            ReadWriter::SslStreamSS(stream) => stream.read(buf),
-        }
-    }
-}
-impl Write for ReadWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        match self {
-            ReadWriter::TcpStream(stream) => stream.write(buf),
-            ReadWriter::SslStream(stream) => stream.write(buf),
-            ReadWriter::Socks5Stream(stream) => stream.write(buf),
-            ReadWriter::SslStreamSS(stream) => stream.write(buf),
-        }
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        match self {
-            ReadWriter::TcpStream(stream) => stream.flush(),
-            ReadWriter::SslStream(stream) => stream.flush(),
-            ReadWriter::Socks5Stream(stream) => stream.flush(),
-            ReadWriter::SslStreamSS(stream) => stream.flush(),
-        }
-    }
-}
 #[derive(Default)]
 pub struct HttpClient {
     headers: HashMap<String, String>,
@@ -118,7 +40,7 @@ impl HttpClient {
     }
 
     pub fn proxy(&mut self, proxy: &str) -> &Self {
-        self.proxy = proxy.to_lowercase().replace("socks5://", "");
+        // self.proxy = proxy.to_lowercase().replace("socks5://", "");
         self
     }
 
@@ -134,52 +56,59 @@ impl HttpClient {
         )
     }
 
-    fn build_base_stream(&self, url: &Url) -> Result<ReadWriter, String> {
+    fn build_base_stream(&self, url: &Url) -> Result<HttpWriter, String> {
         if !self.proxy.trim().is_empty() {
-            match Socks5Stream::connect(&self.proxy, url.to_host().as_str()) {
-                Ok(stream) => return Ok(ReadWriter::Socks5Stream(stream)),
+            // TODO 增加http
+            let proxy = self.proxy.to_lowercase().replace("socks5://", "");
+            match Socks5Stream::connect(proxy, url.to_host().as_str()) {
+                Ok(stream) => {
+                    // cannot set timeout for Socks5Stream
+                    return Ok(HttpWriter::Scoks5(stream));
+                }
                 Err(err) => return Err(err.to_string()),
             }
         }
 
         match TcpStream::connect(url.to_host()) {
-            Ok(stream) => Ok(ReadWriter::TcpStream(stream)),
+            Ok(stream) => {
+                stream.set_read_timeout(Some(READ_TIMEOUT));
+                stream.set_write_timeout(Some(WRITE_TIMEOUT));
+                Ok(HttpWriter::TcpStream(stream))
+            }
             Err(err) => Err(err.to_string()),
         }
     }
 
-    fn build_https_stream(&self, url: &Url, stream: ReadWriter) -> Result<ReadWriter, String> {
+    fn build_https_stream(
+        &self,
+        url: &Url,
+        stream: HttpWriter,
+    ) -> Result<Box<dyn IReadWriter>, String> {
+        let connector = SslConnector::builder(SslMethod::tls()).unwrap().build();
         match stream {
-            ReadWriter::TcpStream(stream) => {
-                stream.set_read_timeout(Some(READ_TIMEOUT)).unwrap();
-                stream.set_write_timeout(Some(WRITE_TIMEOUT)).unwrap();
-                stream.set_nodelay(true);
-
-                let connector = SslConnector::builder(SslMethod::tls()).unwrap().build();
-                let mut stream: SslStream<TcpStream> = match connector.connect(&url.host, stream) {
+            HttpWriter::TcpStream(stream) => {
+                let mut stream = match connector.connect(&url.host, stream) {
                     Ok(stream) => stream,
                     Err(err) => return Err(err.to_string()),
                 };
-                Ok(ReadWriter::SslStream(stream))
+                Ok(Box::new(stream))
             }
-            ReadWriter::Socks5Stream(stream) => {
-                let connector = SslConnector::builder(SslMethod::tls()).unwrap().build();
-                let mut stream: SslStream<Socks5Stream> = match connector.connect(&url.host, stream)
-                {
+            HttpWriter::Scoks5(stream) => {
+                let mut stream = match connector.connect(&url.host, stream) {
                     Ok(stream) => stream,
                     Err(err) => return Err(err.to_string()),
                 };
-                Ok(ReadWriter::SslStreamSS(stream))
+                Ok(Box::new(stream))
             }
-            stream => Ok(stream),
         }
     }
 
-    fn build_stream(&self, url: Url) -> Result<ReadWriter, String> {
+    fn build_stream(&self, url: Url) -> Result<Box<dyn IReadWriter>, String> {
         let stream = self.build_base_stream(&url);
         if url.proto.to_lowercase() == "http" {
-            return stream;
+            return Ok(Box::new(stream?));
         }
+
         self.build_https_stream(&url, stream?)
     }
 
@@ -205,7 +134,7 @@ impl HttpClient {
             return Err(err.to_string());
         }
 
-        match Response::from_stream(stream) {
+        match Response::from_stream(LocalRead::new(stream)) {
             Some(res) => {
                 let code = res.res.code;
                 if (200..=300).contains(&code) {

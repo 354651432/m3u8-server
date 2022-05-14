@@ -4,8 +4,10 @@ pub mod http_client;
 pub mod http_listener;
 pub mod request;
 pub mod response;
+pub mod rwiter;
 #[cfg(test)]
 mod test;
+pub mod url;
 
 type Headers = HashMap<String, String>;
 pub fn parse_headers(lines: &[String]) -> Headers {
