@@ -2,6 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 pub mod http_client;
 pub mod http_listener;
+pub mod proxy;
 pub mod request;
 pub mod response;
 pub mod rwiter;

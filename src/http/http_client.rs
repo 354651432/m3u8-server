@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::{Read, Write},
+    io::{BufRead, BufReader, Read, Write},
     net::TcpStream,
     time::Duration,
 };
@@ -9,8 +9,8 @@ use openssl::ssl::{SslConnector, SslMethod, SslStream};
 use serde::Serialize;
 use socks::Socks5Stream;
 
-use super::rwiter::*;
 use super::url::*;
+use super::{proxy::Proxy, rwiter::*};
 use super::{request::Request, response::*, ReqLine};
 use regex::*;
 
@@ -21,7 +21,7 @@ mod test;
 #[derive(Default)]
 pub struct HttpClient {
     headers: HashMap<String, String>,
-    proxy: String,
+    proxy: Proxy,
 }
 
 static HTTP_VERION: &str = "HTTP/1.1";
@@ -35,12 +35,12 @@ impl HttpClient {
         headers.insert(String::from("Accept"), String::from("*/*"));
         Self {
             headers,
-            proxy: String::new(),
+            proxy: Proxy::default(),
         }
     }
 
     pub fn proxy(&mut self, proxy: &str) -> &Self {
-        self.proxy = proxy.to_string();
+        self.proxy = Proxy::new(proxy);
         self
     }
 
@@ -57,10 +57,33 @@ impl HttpClient {
     }
 
     fn build_base_stream(&self, url: &Url) -> Result<StreamWapper, String> {
-        if !self.proxy.trim().is_empty() {
-            // TODO 增加http
-            let proxy = self.proxy.to_lowercase().replace("socks5://", "");
-            match Socks5Stream::connect(proxy, url.to_host().as_str()) {
+        if let Proxy::Http(addr) = &self.proxy {
+            let mut stream = match TcpStream::connect(addr) {
+                Ok(mut stream) => stream,
+                Err(err) => return Err(err.to_string()),
+            };
+            // 设置 超时以后 ssl 连接 构建会失败
+            // stream.set_read_timeout(Some(READ_TIMEOUT));
+            // stream.set_write_timeout(Some(WRITE_TIMEOUT));
+
+            if let Err(err) = Write::write(
+                &mut stream,
+                format!("CONNECT {}:{} HTTP/1.1\r\n\r\n", url.host, url.port).as_bytes(),
+            ) {
+                return Err(err.to_string());
+            }
+
+            let mut reader = BufReader::new(stream);
+            let mut buf = String::new();
+            if let Err(err) = reader.read_line(&mut buf) {
+                return Err(err.to_string());
+            }
+
+            return Ok(StreamWapper::from_stream(reader.into_inner()));
+        }
+
+        if let Proxy::Socks5(addr) = &self.proxy {
+            match Socks5Stream::connect(addr, url.to_host().as_str()) {
                 Ok(stream) => {
                     // cannot set timeout for Socks5Stream
                     return Ok(StreamWapper::from_stream(stream));
