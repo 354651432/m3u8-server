@@ -1,4 +1,5 @@
 use std::{
+    fmt::{Display, Pointer},
     io::{Read, Write},
     net::TcpStream,
 };
@@ -6,12 +7,13 @@ use std::{
 use socks::Socks5Stream;
 
 // 组合 Read + Write
-pub trait IReadWriter {
+pub trait Stream {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error>;
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error>;
+    fn flush(&mut self) -> std::io::Result<()>;
 }
 
-impl<T: Read + Write> IReadWriter for T {
+impl<T: Read + Write> Stream for T {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
         self.read(buf)
     }
@@ -19,34 +21,39 @@ impl<T: Read + Write> IReadWriter for T {
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         self.write(buf)
     }
-}
 
-// 封装没有Https的流
-pub enum HttpWriter {
-    TcpStream(TcpStream),
-    Scoks5(Socks5Stream),
-}
-impl IReadWriter for HttpWriter {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
-        match self {
-            HttpWriter::TcpStream(stream) => IReadWriter::read(stream, buf),
-            HttpWriter::Scoks5(stream) => IReadWriter::read(stream, buf),
-        }
-    }
-
-    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
-        match self {
-            HttpWriter::TcpStream(stream) => Write::write(stream, buf),
-            HttpWriter::Scoks5(stream) => Write::write(stream, buf),
-        }
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.flush()
     }
 }
 
-// 为了让 IReadWriter 特征对象实现 Read
-pub struct LocalRead(pub Box<dyn IReadWriter>);
+// 为了让 StreamWapper 特征对象实现 Read
+pub struct StreamWapper(pub Box<dyn Stream>);
 
-impl Read for LocalRead {
+impl StreamWapper {
+    pub fn from_stream<T: Read + Write + 'static>(stream: T) -> Self {
+        Self(Box::new(stream))
+    }
+}
+
+impl Display for StreamWapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl Read for StreamWapper {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.0.read(buf)
+    }
+}
+
+impl Write for StreamWapper {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.flush()
     }
 }

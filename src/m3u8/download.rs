@@ -115,8 +115,8 @@ pub fn threadify_download(
     headers: HashMap<String, String>,
 ) -> Result<usize, String> {
     let mut client = HttpClient::new();
-    if let Some(prox) = proxy {
-        client.proxy(prox);
+    if let Some(proxy) = proxy {
+        client.proxy(proxy);
     }
     for (key, value) in headers {
         client.header(key, value);
