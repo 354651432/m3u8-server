@@ -83,10 +83,7 @@ impl HttpClient {
         let connector = SslConnector::builder(SslMethod::tls()).unwrap().build();
         let mut stream = match connector.connect(&url.host, stream) {
             Ok(stream) => stream,
-            Err(err) => {
-                100;
-                return Err("build https stream failed".to_string());
-            }
+            Err(err) => return Err("build https stream failed".to_string()),
         };
         Ok(StreamWapper::from_stream(stream))
     }
@@ -94,7 +91,7 @@ impl HttpClient {
     fn build_stream(&self, url: Url) -> Result<StreamWapper, String> {
         let stream = self.build_base_stream(&url);
         if url.proto.to_lowercase() == "http" {
-            return Ok(stream?);
+            return stream;
         }
 
         self.build_https_stream(&url, stream?)
