@@ -49,10 +49,12 @@ fn main() {
    #+begin_src shell :title rust test command
 cargo test --lib -q test_getkey_ignorecase -- --nocapture
    #+end_src
-** TODO dyn + muliti trait
+** DONE dyn + muliti trait
 ** DONE connection timeout
 ** DONE add process show
 ** DONE add http response code treat 
 ** DONE cli utils
 ** DONE http/1.1 trunk parse
+** TODO error retry
+** TODO 302 redirect
 
