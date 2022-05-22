@@ -8,3 +8,7 @@ __pycache__
 .gdb_history
 .DS_Store
 src/bin/
+rust/target
+rust/download
+rust-noreqs/target
+rust-noreqs/results
