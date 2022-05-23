@@ -51,18 +51,6 @@ pub enum DownloadStatus {
     Err(Box<dyn std::error::Error>),
 }
 
-macro_rules! eh {
-    ($ex:expr) => {
-        match $ex {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        }
-    };
-}
-
 pub async fn download(
     url: &str,
     headers: Option<HashMap<String, String>>,
@@ -76,6 +64,18 @@ pub async fn download(
 
     let url = String::from(url);
     spawn(async move {
+        macro_rules! eh {
+            ($ex:expr) => {
+                match $ex {
+                    Ok(ok) => ok,
+                    Err(err) => {
+                        eprintln!("{err}");
+                        return;
+                    }
+                }
+            };
+        }
+
         let client = &GLOBAL.client;
 
         let mut get_url = client.get(&url);
