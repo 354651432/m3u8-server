@@ -51,6 +51,18 @@ pub enum DownloadStatus {
     Err(Box<dyn std::error::Error>),
 }
 
+macro_rules! eh {
+    ($ex:expr) => {
+        match $ex {
+            Ok(ok) => ok,
+            Err(err) => {
+                eprintln!("{err}");
+                return;
+            }
+        }
+    };
+}
+
 pub async fn download(
     url: &str,
     headers: Option<HashMap<String, String>>,
@@ -73,57 +85,21 @@ pub async fn download(
             }
         }
 
-        let res = match get_url.send().await {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        };
+        let res = eh!(get_url.send().await);
 
-        let m3u8 = match res.text().await {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        };
-        let m3u8: MediaPlaylist = match m3u8.parse() {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        };
+        let m3u8 = eh!(res.text().await);
+        let m3u8: MediaPlaylist = eh!(m3u8.parse());
 
-        let parsed_url = match url::Url::parse(&url) {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        };
+        let parsed_url = eh!(url::Url::parse(&url));
 
         let hash = title.unwrap();
         let file_name = format!("download/{hash}.ts");
         let tmp_file_name = format!("{file_name}_downloading");
-        let mut file = match File::create(&tmp_file_name) {
-            Ok(ok) => ok,
-            Err(err) => {
-                eprintln!("{err}");
-                return;
-            }
-        };
+        let mut file = eh!(File::create(&tmp_file_name));
 
         let mut results = Vec::new();
-        for (_, seg) in &m3u8.segments {
-            let mut get_url = client.get(match parsed_url.join(seg.uri()) {
-                Ok(ok) => ok,
-                Err(err) => {
-                    eprintln!("{err}");
-                    return;
-                }
-            });
+        for (_, seg) in m3u8.segments.iter() {
+            let mut get_url = client.get(eh!(parsed_url.join(seg.uri())));
             if let Some(headers) = headers.as_ref() {
                 for (key, value) in headers.iter() {
                     get_url = get_url.header(key, value);
@@ -135,30 +111,12 @@ pub async fn download(
         }
 
         for it in results {
-            let res = match it.await {
-                Ok(ok) => ok,
-                Err(err) => {
-                    eprintln!("{err}");
-                    return;
-                }
-            };
-            match file.write_all(match &res.bytes().await {
-                Ok(ok) => ok,
-                Err(err) => {
-                    eprintln!("{err}");
-                    return;
-                }
-            }) {
-                Ok(ok) => ok,
-                Err(err) => {
-                    eprintln!("{err}");
-                    return;
-                }
-            };
+            let res = eh!(it.await);
+            eh!(file.write_all(eh!(&res.bytes().await)))
         }
 
         fs::rename(tmp_file_name, file_name).unwrap();
     });
 
-    return DownloadStatus::Success;
+    DownloadStatus::Success
 }
