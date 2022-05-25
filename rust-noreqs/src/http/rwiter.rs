@@ -7,25 +7,9 @@ use std::{
 use socks::Socks5Stream;
 
 // 组合 Read + Write
-pub trait Stream {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error>;
-    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error>;
-    fn flush(&mut self) -> std::io::Result<()>;
-}
+pub trait Stream: Read + Write {}
 
-impl<T: Read + Write> Stream for T {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
-        self.read(buf)
-    }
-
-    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
-        self.write(buf)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.flush()
-    }
-}
+impl<T: Read + Write> Stream for T {}
 
 // 为了让 StreamWapper 特征对象实现 Read
 pub struct StreamWapper(pub Box<dyn Stream>);
