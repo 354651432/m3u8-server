@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/grafov/m3u8"
 )
@@ -113,6 +114,7 @@ func Download(rec Rec) {
 				if err == nil {
 					break
 				}
+				time.Sleep(time.Millisecond * 100)
 			}
 			if res == nil {
 				log.Println("retry failed")
