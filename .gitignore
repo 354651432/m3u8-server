@@ -12,3 +12,5 @@ rust/target
 rust/download
 rust-noreqs/target
 rust-noreqs/results
+go/demo/
+go/downloads/
