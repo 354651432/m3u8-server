@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@koa/router": "^10.1.1",
+    "axios": "^0.27.2",
+    "axios-socks5-agent": "^1.0.5",
+    "https-proxy-agent": "^5.0.1",
+    "koa": "^2.13.4",
+    "koa-body": "^5.0.0",
+    "koa-router": "^10.1.1",
+    "m3u8-parser": "^4.7.1",
+    "node-fetch": "^3.2.4",
+    "request": "^2.88.2",
+    "socks5-node-fetch": "^0.0.4"
+  },
+  "name": "nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
